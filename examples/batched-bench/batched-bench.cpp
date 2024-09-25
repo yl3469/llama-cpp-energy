@@ -7,6 +7,8 @@
 #include <cstdio>
 #include <string>
 #include <vector>
+#include "energymon-rapl.h"
+
 
 static void print_usage(int, char ** argv) {
     LOG("\nexample usage:\n");
@@ -15,6 +17,13 @@ static void print_usage(int, char ** argv) {
 }
 
 int main(int argc, char ** argv) {
+    energymon em;
+    uint64_t start_uj, end_uj;
+
+    // get the energymon instance and initialize
+    energymon_get_rapl(&em);
+    em.finit(&em);
+    start_uj = em.fread(&em);
     gpt_params params;
 
     if (!gpt_params_parse(argc, argv, params, LLAMA_EXAMPLE_BENCH, print_usage)) {
@@ -39,6 +48,10 @@ int main(int argc, char ** argv) {
     llama_model_params model_params = llama_model_params_from_gpt_params(params);
 
     llama_model * model = llama_load_model_from_file(params.model.c_str(), model_params);
+    end_uj = em.fread(&em);
+    printf("~~~~~Total energy for llama_load_model_from_file() in microjoules: %"PRIu64"\n", end_uj - start_uj);
+
+    
 
     if (model == NULL) {
         fprintf(stderr , "%s: error: unable to load model\n" , __func__);
@@ -105,8 +118,8 @@ int main(int argc, char ** argv) {
         LOG("\n");
         LOG("%s: n_kv_max = %d, n_batch = %d, n_ubatch = %d, flash_attn = %d, is_pp_shared = %d, n_gpu_layers = %d, n_threads = %u, n_threads_batch = %u\n", __func__, n_kv_max, params.n_batch, params.n_ubatch, params.flash_attn, params.is_pp_shared, params.n_gpu_layers, ctx_params.n_threads, ctx_params.n_threads_batch);
         LOG("\n");
-        LOG("|%6s | %6s | %4s | %6s | %8s | %8s | %8s | %8s | %8s | %8s |\n", "PP", "TG", "B", "N_KV", "T_PP s", "S_PP t/s", "T_TG s", "S_TG t/s", "T s", "S t/s");
-        LOG("|%6s-|-%6s-|-%4s-|-%6s-|-%8s-|-%8s-|-%8s-|-%8s-|-%8s-|-%8s-|\n", "------", "------", "----", "------", "--------", "--------", "--------", "--------", "--------", "--------");
+        LOG("|%6s | %6s | %4s | %6s | %8s | %8s | %8s | %8s | %8s | %8s | %8s | %8s | %8s |\n", "PP", "TG", "B", "N_KV", "T_PP s", "S_PP t/s", "P_PP W", "T_TG s", "S_TG t/s", "P_TG W", "T s", "S t/s", "P W");
+        LOG("|%6s-|-%6s-|-%4s-|-%6s-|-%8s-|-%8s-|-%8s-|-%8s-|-%8s-|-%8s-|-%8s-|-%8s-|-%8s-|\n", "------", "------", "----", "------", "--------", "--------", "--------", "--------", "--------", "--------", "--------", "--------", "--------");
     }
 
     for (        int i_pp = 0; i_pp < (int) n_pp.size(); ++i_pp) {
@@ -132,6 +145,7 @@ int main(int argc, char ** argv) {
                 batch.logits[batch.n_tokens - 1] = true;
 
                 const auto t_pp_start = ggml_time_us();
+                const auto e_pp_start = em.fread(&em);
 
                 llama_kv_cache_clear(ctx);
 
@@ -147,8 +161,10 @@ int main(int argc, char ** argv) {
                 }
 
                 const auto t_pp_end = ggml_time_us();
+                const auto e_pp_end = em.fread(&em);
 
                 const auto t_tg_start = ggml_time_us();
+                const auto e_tg_start = em.fread(&em);
 
                 for (int i = 0; i < tg; ++i) {
                     llama_batch_clear(batch);
@@ -164,12 +180,21 @@ int main(int argc, char ** argv) {
                 }
 
                 const auto t_tg_end = ggml_time_us();
+                const auto e_tg_end = em.fread(&em);
 
                 const int32_t n_kv = n_ctx_req;
 
                 const float t_pp = (t_pp_end - t_pp_start) / 1000000.0f;
                 const float t_tg = (t_tg_end - t_tg_start) / 1000000.0f;
+                const float e_pp = (e_pp_end - e_pp_start) / 1000.0f; // in mJ
+                const float e_tg = (e_tg_end - e_tg_start) / 1000.0f;
+                
+                // Measure average power
+                const float p_pp = e_pp / t_pp / 1000.0f; // in W
+                const float p_tg = e_tg / t_tg / 1000.0f;
                 const float t    = t_pp + t_tg;
+                const float e = e_pp + e_tg;
+                const float p = e / t / 1000.0f; // in W
 
                 const float speed_pp = is_pp_shared ? pp / t_pp : pl*pp / t_pp;
                 const float speed_tg = pl*tg / t_tg;
@@ -183,12 +208,13 @@ int main(int argc, char ** argv) {
                         pp, tg, pl, n_kv, t_pp, speed_pp, t_tg, speed_tg, t, speed
                     );
                 } else {
-                    LOG("|%6d | %6d | %4d | %6d | %8.3f | %8.2f | %8.3f | %8.2f | %8.3f | %8.2f |\n", pp, tg, pl, n_kv, t_pp, speed_pp, t_tg, speed_tg, t, speed);
+                    LOG("|%6d | %6d | %4d | %6d | %8.3f | %8.2f | %8.4f | %8.3f | %8.2f | %8.4f | %8.3f | %8.2f | %8.4f | \n", pp, tg, pl, n_kv, t_pp, speed_pp, p_pp, t_tg, speed_tg, p_tg, t, speed, p);
                 }
             }
         }
     }
-
+// destroy the instance
+    em.ffinish(&em);
     LOG("\n");
     llama_perf_context_print(ctx);
 

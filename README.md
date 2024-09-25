@@ -472,3 +472,4 @@ If your issue is with model generation quality, then please at least scan the fo
 - GPT-3.5 / InstructGPT / ChatGPT:
     - [Aligning language models to follow instructions](https://openai.com/research/instruction-following)
     - [Training language models to follow instructions with human feedback](https://arxiv.org/abs/2203.02155)
+ ./llama-batched-bench -m ./models/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf -c 8192 -b 512 -ub 512 -ngl 0 -npp 128,256,512 -ntg 16,32,128 -npl 1,2,4,8,16,32,64 

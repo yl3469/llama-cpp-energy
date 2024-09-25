@@ -6,6 +6,11 @@ include(CheckIncludeFileCXX)
 set(CMAKE_WARN_UNUSED_CLI YES)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+# find_package(PkgConfig REQUIRED)
+# find_package(EnergyMonRapl REQUIRED)
+# pkg_check_modules(EnergyMonRapl REQUIRED IMPORTED_TARGETS energymon-rapl)
+
+
 
 if (NOT XCODE AND NOT MSVC AND NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)

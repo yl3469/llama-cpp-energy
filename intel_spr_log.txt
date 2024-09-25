@@ -1,0 +1,333 @@
+sudo env PATH=$PATH   llama-batched-bench -m ./models/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf -c 8192 -b 512 -ub 512 -ngl 0 -npp 128,256,512 -ntg 16,32,128 -npl 1,2,4,8,16,32,64 -t 64
+[sudo] password for lisa: 
+warning: not compiled with GPU offload support, --gpu-layers option will be ignored
+warning: see main README.md for information on enabling GPU BLAS support
+build: 3787 (6026da52) with cc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0 for x86_64-linux-gnu
+llama_model_loader: loaded meta data with 33 key-value pairs and 292 tensors from ./models/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf (version GGUF V3 (latest))
+llama_model_loader: Dumping metadata keys/values. Note: KV overrides do not apply in this output.
+llama_model_loader: - kv   0:                       general.architecture str              = llama
+llama_model_loader: - kv   1:                               general.type str              = model
+llama_model_loader: - kv   2:                               general.name str              = Meta Llama 3.1 8B Instruct
+llama_model_loader: - kv   3:                           general.finetune str              = Instruct
+llama_model_loader: - kv   4:                           general.basename str              = Meta-Llama-3.1
+llama_model_loader: - kv   5:                         general.size_label str              = 8B
+llama_model_loader: - kv   6:                            general.license str              = llama3.1
+llama_model_loader: - kv   7:                               general.tags arr[str,6]       = ["facebook", "meta", "pytorch", "llam...
+llama_model_loader: - kv   8:                          general.languages arr[str,8]       = ["en", "de", "fr", "it", "pt", "hi", ...
+llama_model_loader: - kv   9:                          llama.block_count u32              = 32
+llama_model_loader: - kv  10:                       llama.context_length u32              = 131072
+llama_model_loader: - kv  11:                     llama.embedding_length u32              = 4096
+llama_model_loader: - kv  12:                  llama.feed_forward_length u32              = 14336
+llama_model_loader: - kv  13:                 llama.attention.head_count u32              = 32
+llama_model_loader: - kv  14:              llama.attention.head_count_kv u32              = 8
+llama_model_loader: - kv  15:                       llama.rope.freq_base f32              = 500000.000000
+llama_model_loader: - kv  16:     llama.attention.layer_norm_rms_epsilon f32              = 0.000010
+llama_model_loader: - kv  17:                          general.file_type u32              = 15
+llama_model_loader: - kv  18:                           llama.vocab_size u32              = 128256
+llama_model_loader: - kv  19:                 llama.rope.dimension_count u32              = 128
+llama_model_loader: - kv  20:                       tokenizer.ggml.model str              = gpt2
+llama_model_loader: - kv  21:                         tokenizer.ggml.pre str              = llama-bpe
+llama_model_loader: - kv  22:                      tokenizer.ggml.tokens arr[str,128256]  = ["!", "\"", "#", "$", "%", "&", "'", ...
+llama_model_loader: - kv  23:                  tokenizer.ggml.token_type arr[i32,128256]  = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...
+llama_model_loader: - kv  24:                      tokenizer.ggml.merges arr[str,280147]  = ["Ġ Ġ", "Ġ ĠĠĠ", "ĠĠ ĠĠ", "...
+llama_model_loader: - kv  25:                tokenizer.ggml.bos_token_id u32              = 128000
+llama_model_loader: - kv  26:                tokenizer.ggml.eos_token_id u32              = 128009
+llama_model_loader: - kv  27:                    tokenizer.chat_template str              = {{- bos_token }}\n{%- if custom_tools ...
+llama_model_loader: - kv  28:               general.quantization_version u32              = 2
+llama_model_loader: - kv  29:                      quantize.imatrix.file str              = /models_out/Meta-Llama-3.1-8B-Instruc...
+llama_model_loader: - kv  30:                   quantize.imatrix.dataset str              = /training_dir/calibration_datav3.txt
+llama_model_loader: - kv  31:             quantize.imatrix.entries_count i32              = 224
+llama_model_loader: - kv  32:              quantize.imatrix.chunks_count i32              = 125
+llama_model_loader: - type  f32:   66 tensors
+llama_model_loader: - type q4_K:  193 tensors
+llama_model_loader: - type q6_K:   33 tensors
+llm_load_vocab: special tokens cache size = 256
+llm_load_vocab: token to piece cache size = 0.7999 MB
+llm_load_print_meta: format           = GGUF V3 (latest)
+llm_load_print_meta: arch             = llama
+llm_load_print_meta: vocab type       = BPE
+llm_load_print_meta: n_vocab          = 128256
+llm_load_print_meta: n_merges         = 280147
+llm_load_print_meta: vocab_only       = 0
+llm_load_print_meta: n_ctx_train      = 131072
+llm_load_print_meta: n_embd           = 4096
+llm_load_print_meta: n_layer          = 32
+llm_load_print_meta: n_head           = 32
+llm_load_print_meta: n_head_kv        = 8
+llm_load_print_meta: n_rot            = 128
+llm_load_print_meta: n_swa            = 0
+llm_load_print_meta: n_embd_head_k    = 128
+llm_load_print_meta: n_embd_head_v    = 128
+llm_load_print_meta: n_gqa            = 4
+llm_load_print_meta: n_embd_k_gqa     = 1024
+llm_load_print_meta: n_embd_v_gqa     = 1024
+llm_load_print_meta: f_norm_eps       = 0.0e+00
+llm_load_print_meta: f_norm_rms_eps   = 1.0e-05
+llm_load_print_meta: f_clamp_kqv      = 0.0e+00
+llm_load_print_meta: f_max_alibi_bias = 0.0e+00
+llm_load_print_meta: f_logit_scale    = 0.0e+00
+llm_load_print_meta: n_ff             = 14336
+llm_load_print_meta: n_expert         = 0
+llm_load_print_meta: n_expert_used    = 0
+llm_load_print_meta: causal attn      = 1
+llm_load_print_meta: pooling type     = 0
+llm_load_print_meta: rope type        = 0
+llm_load_print_meta: rope scaling     = linear
+llm_load_print_meta: freq_base_train  = 500000.0
+llm_load_print_meta: freq_scale_train = 1
+llm_load_print_meta: n_ctx_orig_yarn  = 131072
+llm_load_print_meta: rope_finetuned   = unknown
+llm_load_print_meta: ssm_d_conv       = 0
+llm_load_print_meta: ssm_d_inner      = 0
+llm_load_print_meta: ssm_d_state      = 0
+llm_load_print_meta: ssm_dt_rank      = 0
+llm_load_print_meta: ssm_dt_b_c_rms   = 0
+llm_load_print_meta: model type       = 8B
+llm_load_print_meta: model ftype      = Q4_K - Medium
+llm_load_print_meta: model params     = 8.03 B
+llm_load_print_meta: model size       = 4.58 GiB (4.89 BPW) 
+llm_load_print_meta: general.name     = Meta Llama 3.1 8B Instruct
+llm_load_print_meta: BOS token        = 128000 '<|begin_of_text|>'
+llm_load_print_meta: EOS token        = 128009 '<|eot_id|>'
+llm_load_print_meta: LF token         = 128 'Ä'
+llm_load_print_meta: EOT token        = 128009 '<|eot_id|>'
+llm_load_print_meta: max token length = 256
+llm_load_tensors: ggml ctx size =    0.14 MiB
+llm_load_tensors:        CPU buffer size =  4685.30 MiB
+........................................................................................
+~~~~~Total energy for llama_load_model_from_file() in microjoules: 569645697
+llama_new_context_with_model: n_ctx      = 8192
+llama_new_context_with_model: n_batch    = 512
+llama_new_context_with_model: n_ubatch   = 512
+llama_new_context_with_model: flash_attn = 0
+llama_new_context_with_model: freq_base  = 500000.0
+llama_new_context_with_model: freq_scale = 1
+llama_kv_cache_init:        CPU KV buffer size =  1024.00 MiB
+llama_new_context_with_model: KV self size  = 1024.00 MiB, K (f16):  512.00 MiB, V (f16):  512.00 MiB
+llama_new_context_with_model:        CPU  output buffer size =    31.31 MiB
+llama_new_context_with_model:        CPU compute buffer size =   560.01 MiB
+llama_new_context_with_model: graph nodes  = 1030
+llama_new_context_with_model: graph splits = 1
+
+main: n_kv_max = 8192, n_batch = 512, n_ubatch = 512, flash_attn = 0, is_pp_shared = 0, n_gpu_layers = 0, n_threads = 64, n_threads_batch = 64
+
+|    PP |     TG |    B |   N_KV |   T_PP s | S_PP t/s |   P_PP W |   T_TG s | S_TG t/s |   P_TG W |      T s |    S t/s |      P W |
+|-------|--------|------|--------|----------|----------|----------|----------|----------|----------|----------|----------|----------|
+|   128 |     16 |    1 |    144 |    1.308 |    97.85 | 549.8203 |    0.917 |    17.45 | 569.9346 |    2.225 |    64.71 | 558.1102 | 
+|   128 |     16 |    2 |    288 |    2.631 |    97.30 | 548.9772 |    1.011 |    31.66 | 576.3079 |    3.642 |    79.08 | 556.5624 | 
+|   128 |     16 |    4 |    576 |    5.154 |    99.33 | 547.8794 |    1.243 |    51.50 | 577.8942 |    6.397 |    90.04 | 553.7098 | 
+|   128 |     16 |    8 |   1152 |    9.659 |   106.02 | 558.8220 |    1.885 |    67.89 | 578.0559 |   11.544 |    99.79 | 561.9633 | 
+|   128 |     16 |   16 |   2304 |   20.735 |    98.77 | 559.7399 |    3.357 |    76.25 | 578.5531 |   24.092 |    95.63 | 562.3617 | 
+|   128 |     16 |   32 |   4608 |   40.761 |   100.49 | 572.7734 |    6.909 |    74.10 | 588.6421 |   47.670 |    96.66 | 575.0734 | 
+|   128 |     32 |    1 |    160 |    1.145 |   111.83 | 567.2979 |    1.459 |    21.93 | 589.2729 |    2.604 |    61.45 | 579.6136 | 
+|   128 |     32 |    2 |    320 |    2.148 |   119.19 | 571.5737 |    1.859 |    34.44 | 596.1577 |    4.006 |    79.87 | 582.9780 | 
+|   128 |     32 |    4 |    640 |    4.220 |   121.32 | 574.5938 |    2.377 |    53.85 | 588.5897 |    6.597 |    97.01 | 579.6364 | 
+|   128 |     32 |    8 |   1280 |    9.218 |   111.09 | 568.4413 |    3.706 |    69.07 | 582.8376 |   12.924 |    99.04 | 572.5699 | 
+|   128 |     32 |   16 |   2560 |   18.577 |   110.25 | 572.2533 |    6.560 |    78.05 | 583.7572 |   25.136 |   101.84 | 575.2554 | 
+|   128 |     32 |   32 |   5120 |   40.468 |   101.22 | 574.9161 |   14.186 |    72.18 | 588.1042 |   54.655 |    93.68 | 578.3392 | 
+|   128 |    128 |    1 |    256 |    1.318 |    97.09 | 549.5295 |    5.842 |    21.91 | 590.0408 |    7.160 |    35.75 | 582.5820 | 
+|   128 |    128 |    2 |    512 |    2.153 |   118.93 | 571.9771 |    7.528 |    34.01 | 593.7144 |    9.680 |    52.89 | 588.8806 | 
+|   128 |    128 |    4 |   1024 |    4.237 |   120.84 | 574.4199 |    9.555 |    53.59 | 589.5330 |   13.792 |    74.25 | 584.8901 | 
+|   128 |    128 |    8 |   2048 |    8.555 |   119.69 | 576.5778 |   15.216 |    67.30 | 584.4476 |   23.771 |    86.16 | 581.6152 | 
+|   128 |    128 |   16 |   4096 |   17.818 |   114.94 | 578.2200 |   27.505 |    74.46 | 585.4729 |   45.323 |    90.37 | 582.6216 | 
+|   128 |    128 |   32 |   8192 |   40.847 |   100.28 | 574.5701 |   62.193 |    65.86 | 589.9545 |  103.040 |    79.50 | 583.8558 | 
+|   256 |     16 |    1 |    272 |    2.173 |   117.83 | 571.4791 |    0.782 |    20.47 | 581.2238 |    2.954 |    92.07 | 574.0573 | 
+|   256 |     16 |    2 |    544 |    4.235 |   120.88 | 575.0144 |    0.951 |    33.65 | 592.6334 |    5.187 |   104.89 | 578.2451 | 
+|   256 |     16 |    4 |   1088 |    8.559 |   119.64 | 577.0604 |    1.222 |    52.35 | 591.3818 |    9.781 |   111.23 | 578.8502 | 
+|   256 |     16 |    8 |   2176 |   18.632 |   109.92 | 573.9479 |    2.007 |    63.77 | 584.3120 |   20.639 |   105.43 | 574.9559 | 
+|   256 |     16 |   16 |   4352 |   40.051 |   102.27 | 576.8685 |    3.714 |    68.92 | 586.1671 |   43.765 |    99.44 | 577.6577 | 
+|   256 |     32 |    1 |    288 |    2.214 |   115.62 | 567.9695 |    1.562 |    20.49 | 581.6279 |    3.776 |    76.27 | 573.6193 | 
+|   256 |     32 |    2 |    576 |    4.246 |   120.57 | 574.3824 |    1.920 |    33.34 | 589.8461 |    6.166 |    93.41 | 579.1965 | 
+|   256 |     32 |    4 |   1152 |    8.726 |   117.35 | 573.9641 |    2.450 |    52.25 | 590.3768 |   11.175 |   103.08 | 577.5617 | 
+|   256 |     32 |    8 |   2304 |   18.009 |   113.72 | 576.9519 |    3.984 |    64.26 | 585.9670 |   21.993 |   104.76 | 578.5848 | 
+|   256 |     32 |   16 |   4608 |   38.997 |   105.03 | 579.4694 |    7.465 |    68.59 | 586.6839 |   46.462 |    99.18 | 580.6285 | 
+|   256 |    128 |    1 |    384 |    2.164 |   118.28 | 571.3226 |    6.255 |    20.46 | 582.6551 |    8.419 |    45.61 | 579.7416 | 
+|   256 |    128 |    2 |    768 |    4.235 |   120.88 | 574.1754 |    7.604 |    33.66 | 592.4494 |   11.840 |    64.87 | 585.9122 | 
+|   256 |    128 |    4 |   1536 |    8.563 |   119.58 | 576.6547 |    9.914 |    51.64 | 590.8898 |   18.477 |    83.13 | 584.2927 | 
+|   256 |    128 |    8 |   3072 |   17.856 |   114.70 | 578.4035 |   16.346 |    62.64 | 586.2667 |   34.202 |    89.82 | 582.1616 | 
+|   256 |    128 |   16 |   6144 |   38.978 |   105.08 | 580.0063 |   31.267 |    65.50 | 587.0204 |   70.245 |    87.47 | 583.1284 | 
+|   512 |     16 |    1 |    528 |    4.319 |   118.54 | 572.8805 |    0.788 |    20.30 | 584.0968 |    5.107 |   103.38 | 574.6113 | 
+|   512 |     16 |    2 |   1056 |    8.973 |   114.13 | 572.1147 |    0.977 |    32.76 | 588.8950 |    9.949 |   106.14 | 573.7621 | 
+|   512 |     16 |    4 |   2112 |   18.282 |   112.02 | 576.1686 |    1.317 |    48.59 | 590.3738 |   19.599 |   107.76 | 577.1233 | 
+|   512 |     16 |    8 |   4224 |   40.212 |   101.86 | 576.8607 |    2.256 |    56.75 | 588.5530 |   42.468 |    99.46 | 577.4818 | 
+|   512 |     32 |    1 |    544 |    4.405 |   116.22 | 569.6574 |    1.558 |    20.54 | 584.2834 |    5.963 |    91.22 | 573.4789 | 
+|   512 |     32 |    2 |   1088 |    8.560 |   119.63 | 577.3835 |    1.956 |    32.71 | 589.8912 |   10.516 |   103.46 | 579.7105 | 
+|   512 |     32 |    4 |   2176 |   17.844 |   114.77 | 579.1690 |    2.616 |    48.92 | 592.1536 |   20.461 |   106.35 | 580.8293 | 
+|   512 |     32 |    8 |   4352 |   38.999 |   105.03 | 580.4543 |    4.530 |    56.52 | 588.9372 |   43.529 |    99.98 | 581.3370 | 
+|   512 |    128 |    1 |    640 |    4.245 |   120.63 | 575.2959 |    6.223 |    20.57 | 584.9534 |   10.468 |    61.14 | 581.0374 | 
+|   512 |    128 |    2 |   1280 |    8.560 |   119.63 | 577.6674 |    7.872 |    32.52 | 587.2280 |   16.432 |    77.90 | 582.2478 | 
+|   512 |    128 |    4 |   2560 |   17.852 |   114.72 | 579.2690 |   10.559 |    48.49 | 591.9891 |   28.411 |    90.11 | 583.9966 | 
+|   512 |    128 |    8 |   5120 |   39.095 |   104.77 | 580.2479 |   18.575 |    55.13 | 588.5396 |   57.669 |    88.78 | 582.9186 | 
+
+llama_perf_context_print:        load time =    2264.46 ms
+llama_perf_context_print: prompt eval time =  956974.90 ms / 89712 tokens (   10.67 ms per token,    93.75 tokens per second)
+llama_perf_context_print:        eval time =   25385.67 ms /   528 runs   (   48.08 ms per token,    20.80 tokens per second)
+llama_perf_context_print:       total time =  992190.27 ms / 90240 tokens
+
+# For 112 n_threads
+
+sudo env PATH=$PATH   llama-batched-bench -m ./models/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf -c 8192 -b 512 -ub 512 -ngl 0 -npp
+ 128,256,512 -ntg 16,32,128 -npl 1,2,4,8,16,32,64
+warning: not compiled with GPU offload support, --gpu-layers option will be ignored
+warning: see main README.md for information on enabling GPU BLAS support
+build: 3787 (6026da52) with cc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0 for x86_64-linux-gnu
+llama_model_loader: loaded meta data with 33 key-value pairs and 292 tensors from ./models/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf (version GGUF V3 (latest))
+llama_model_loader: Dumping metadata keys/values. Note: KV overrides do not apply in this output.
+llama_model_loader: - kv   0:                       general.architecture str              = llama
+llama_model_loader: - kv   1:                               general.type str              = model
+llama_model_loader: - kv   2:                               general.name str              = Meta Llama 3.1 8B Instruct
+llama_model_loader: - kv   3:                           general.finetune str              = Instruct
+llama_model_loader: - kv   4:                           general.basename str              = Meta-Llama-3.1
+llama_model_loader: - kv   5:                         general.size_label str              = 8B
+llama_model_loader: - kv   6:                            general.license str              = llama3.1
+llama_model_loader: - kv   7:                               general.tags arr[str,6]       = ["facebook", "meta", "pytorch", "llam...
+llama_model_loader: - kv   8:                          general.languages arr[str,8]       = ["en", "de", "fr", "it", "pt", "hi", ...
+llama_model_loader: - kv   9:                          llama.block_count u32              = 32
+llama_model_loader: - kv  10:                       llama.context_length u32              = 131072
+llama_model_loader: - kv  11:                     llama.embedding_length u32              = 4096
+llama_model_loader: - kv  12:                  llama.feed_forward_length u32              = 14336
+llama_model_loader: - kv  13:                 llama.attention.head_count u32              = 32
+llama_model_loader: - kv  14:              llama.attention.head_count_kv u32              = 8
+llama_model_loader: - kv  15:                       llama.rope.freq_base f32              = 500000.000000
+llama_model_loader: - kv  16:     llama.attention.layer_norm_rms_epsilon f32              = 0.000010
+llama_model_loader: - kv  17:                          general.file_type u32              = 15
+llama_model_loader: - kv  18:                           llama.vocab_size u32              = 128256
+llama_model_loader: - kv  19:                 llama.rope.dimension_count u32              = 128
+llama_model_loader: - kv  20:                       tokenizer.ggml.model str              = gpt2
+llama_model_loader: - kv  21:                         tokenizer.ggml.pre str              = llama-bpe
+llama_model_loader: - kv  22:                      tokenizer.ggml.tokens arr[str,128256]  = ["!", "\"", "#", "$", "%", "&", "'", ...
+llama_model_loader: - kv  23:                  tokenizer.ggml.token_type arr[i32,128256]  = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...
+llama_model_loader: - kv  24:                      tokenizer.ggml.merges arr[str,280147]  = ["Ġ Ġ", "Ġ ĠĠĠ", "ĠĠ ĠĠ", "...
+llama_model_loader: - kv  25:                tokenizer.ggml.bos_token_id u32              = 128000
+llama_model_loader: - kv  26:                tokenizer.ggml.eos_token_id u32              = 128009
+llama_model_loader: - kv  27:                    tokenizer.chat_template str              = {{- bos_token }}\n{%- if custom_tools ...
+llama_model_loader: - kv  28:               general.quantization_version u32              = 2
+llama_model_loader: - kv  29:                      quantize.imatrix.file str              = /models_out/Meta-Llama-3.1-8B-Instruc...
+llama_model_loader: - kv  30:                   quantize.imatrix.dataset str              = /training_dir/calibration_datav3.txt
+llama_model_loader: - kv  31:             quantize.imatrix.entries_count i32              = 224
+llama_model_loader: - kv  32:              quantize.imatrix.chunks_count i32              = 125
+llama_model_loader: - type  f32:   66 tensors
+llama_model_loader: - type q4_K:  193 tensors
+llama_model_loader: - type q6_K:   33 tensors
+llm_load_vocab: special tokens cache size = 256
+llm_load_vocab: token to piece cache size = 0.7999 MB
+llm_load_print_meta: format           = GGUF V3 (latest)
+llm_load_print_meta: arch             = llama
+llm_load_print_meta: vocab type       = BPE
+llm_load_print_meta: n_vocab          = 128256
+llm_load_print_meta: n_merges         = 280147
+llm_load_print_meta: vocab_only       = 0
+llm_load_print_meta: n_ctx_train      = 131072
+llm_load_print_meta: n_embd           = 4096
+llm_load_print_meta: n_layer          = 32
+llm_load_print_meta: n_head           = 32
+llm_load_print_meta: n_head_kv        = 8
+llm_load_print_meta: n_rot            = 128
+llm_load_print_meta: n_swa            = 0
+llm_load_print_meta: n_embd_head_k    = 128
+llm_load_print_meta: n_embd_head_v    = 128
+llm_load_print_meta: n_gqa            = 4
+llm_load_print_meta: n_embd_k_gqa     = 1024
+llm_load_print_meta: n_embd_v_gqa     = 1024
+llm_load_print_meta: f_norm_eps       = 0.0e+00
+llm_load_print_meta: f_norm_rms_eps   = 1.0e-05
+llm_load_print_meta: f_clamp_kqv      = 0.0e+00
+llm_load_print_meta: f_max_alibi_bias = 0.0e+00
+llm_load_print_meta: f_logit_scale    = 0.0e+00
+llm_load_print_meta: n_ff             = 14336
+llm_load_print_meta: n_expert         = 0
+llm_load_print_meta: n_expert_used    = 0
+llm_load_print_meta: causal attn      = 1
+llm_load_print_meta: pooling type     = 0
+llm_load_print_meta: rope type        = 0
+llm_load_print_meta: rope scaling     = linear
+llm_load_print_meta: freq_base_train  = 500000.0
+llm_load_print_meta: freq_scale_train = 1
+llm_load_print_meta: n_ctx_orig_yarn  = 131072
+llm_load_print_meta: rope_finetuned   = unknown
+llm_load_print_meta: ssm_d_conv       = 0
+llm_load_print_meta: ssm_d_inner      = 0
+llm_load_print_meta: ssm_d_state      = 0
+llm_load_print_meta: ssm_dt_rank      = 0
+llm_load_print_meta: ssm_dt_b_c_rms   = 0
+llm_load_print_meta: model type       = 8B
+llm_load_print_meta: model ftype      = Q4_K - Medium
+llm_load_print_meta: model params     = 8.03 B
+llm_load_print_meta: model size       = 4.58 GiB (4.89 BPW) 
+llm_load_print_meta: general.name     = Meta Llama 3.1 8B Instruct
+llm_load_print_meta: BOS token        = 128000 '<|begin_of_text|>'
+llm_load_print_meta: EOS token        = 128009 '<|eot_id|>'
+llm_load_print_meta: LF token         = 128 'Ä'
+llm_load_print_meta: EOT token        = 128009 '<|eot_id|>'
+llm_load_print_meta: max token length = 256
+llm_load_tensors: ggml ctx size =    0.14 MiB
+llm_load_tensors:        CPU buffer size =  4685.30 MiB
+........................................................................................
+~~~~~Total energy for llama_load_model_from_file() in microjoules: 567096083
+llama_new_context_with_model: n_ctx      = 8192
+llama_new_context_with_model: n_batch    = 512
+llama_new_context_with_model: n_ubatch   = 512
+llama_new_context_with_model: flash_attn = 0
+llama_new_context_with_model: freq_base  = 500000.0
+llama_new_context_with_model: freq_scale = 1
+llama_kv_cache_init:        CPU KV buffer size =  1024.00 MiB
+llama_new_context_with_model: KV self size  = 1024.00 MiB, K (f16):  512.00 MiB, V (f16):  512.00 MiB
+llama_new_context_with_model:        CPU  output buffer size =    31.31 MiB
+llama_new_context_with_model:        CPU compute buffer size =   560.01 MiB
+llama_new_context_with_model: graph nodes  = 1030
+llama_new_context_with_model: graph splits = 1
+
+main: n_kv_max = 8192, n_batch = 512, n_ubatch = 512, flash_attn = 0, is_pp_shared = 0, n_gpu_layers = 0, n_threads = 112, n_threads_batch = 112
+
+|    PP |     TG |    B |   N_KV |   T_PP s | S_PP t/s |   P_PP W |   T_TG s | S_TG t/s |   P_TG W |      T s |    S t/s |      P W |
+|-------|--------|------|--------|----------|----------|----------|----------|----------|----------|----------|----------|----------|
+|   128 |     16 |    1 |    144 |    0.973 |   131.57 | 614.1573 |    0.784 |    20.41 | 602.4286 |    1.757 |    81.96 | 608.9230 | 
+|   128 |     16 |    2 |    288 |    1.571 |   162.93 | 640.4838 |    0.906 |    35.33 | 619.2012 |    2.477 |   116.27 | 632.7016 | 
+|   128 |     16 |    4 |    576 |    2.893 |   176.96 | 653.4529 |    1.112 |    57.54 | 606.7414 |    4.006 |   143.80 | 640.4823 | 
+|   128 |     16 |    8 |   1152 |    6.779 |   151.07 | 635.1646 |    1.583 |    80.87 | 620.8651 |    8.361 |   137.78 | 632.4578 | 
+|   128 |     16 |   16 |   2304 |   13.669 |   149.83 | 640.0435 |    2.719 |    94.15 | 636.0938 |   16.388 |   140.59 | 639.3882 | 
+|   128 |     16 |   32 |   4608 |   28.619 |   143.12 | 650.5904 |    5.078 |   100.82 | 665.5089 |   33.697 |   136.75 | 652.8386 | 
+|   128 |     32 |    1 |    160 |    0.982 |   130.37 | 605.1346 |    1.563 |    20.47 | 608.2425 |    2.545 |    62.87 | 607.0435 | 
+|   128 |     32 |    2 |    320 |    1.402 |   182.59 | 662.8217 |    1.794 |    35.67 | 625.4917 |    3.196 |   100.12 | 641.8677 | 
+|   128 |     32 |    4 |    640 |    2.647 |   193.43 | 672.0226 |    2.101 |    60.93 | 624.4399 |    4.748 |   134.80 | 650.9673 | 
+|   128 |     32 |    8 |   1280 |    5.346 |   191.54 | 676.4211 |    2.986 |    85.72 | 632.9277 |    8.332 |   153.62 | 660.8329 | 
+|   128 |     32 |   16 |   2560 |   12.587 |   162.71 | 657.8643 |    5.563 |    92.03 | 637.0388 |   18.150 |   141.05 | 651.4809 | 
+|   128 |     32 |   32 |   5120 |   26.491 |   154.62 | 665.0407 |   10.420 |    98.28 | 665.4212 |   36.911 |   138.71 | 665.1481 | 
+|   128 |    128 |    1 |    256 |    0.792 |   161.63 | 647.9463 |    6.249 |    20.48 | 607.9019 |    7.041 |    36.36 | 612.4061 | 
+|   128 |    128 |    2 |    512 |    1.400 |   182.82 | 663.8610 |    7.381 |    34.68 | 622.9186 |    8.781 |    58.31 | 629.4474 | 
+|   128 |    128 |    4 |   1024 |    2.945 |   173.84 | 655.0023 |    8.926 |    57.36 | 614.6469 |   11.871 |    86.26 | 624.6589 | 
+|   128 |    128 |    8 |   2048 |    6.054 |   169.14 | 650.4899 |   13.090 |    78.23 | 626.5783 |   19.144 |   106.98 | 634.1400 | 
+|   128 |    128 |   16 |   4096 |   11.794 |   173.65 | 669.7261 |   23.335 |    87.77 | 641.3633 |   35.129 |   116.60 | 650.8857 | 
+|   128 |    128 |   32 |   8192 |   27.219 |   150.49 | 662.2892 |   46.176 |    88.70 | 664.5818 |   73.395 |   111.62 | 663.7316 | 
+|   256 |     16 |    1 |    272 |    1.457 |   175.74 | 658.1701 |    0.778 |    20.56 | 609.7170 |    2.235 |   121.71 | 641.2993 | 
+|   256 |     16 |    2 |    544 |    2.705 |   189.25 | 670.2047 |    0.924 |    34.62 | 624.9538 |    3.630 |   149.88 | 658.6821 | 
+|   256 |     16 |    4 |   1088 |    5.570 |   183.85 | 670.7275 |    1.129 |    56.69 | 616.5377 |    6.699 |   162.42 | 661.5953 | 
+|   256 |     16 |    8 |   2176 |   12.087 |   169.44 | 664.9275 |    1.610 |    79.48 | 637.2625 |   13.697 |   158.87 | 661.6749 | 
+|   256 |     16 |   16 |   4352 |   26.244 |   156.07 | 668.0871 |    2.912 |    87.90 | 651.8181 |   29.156 |   149.27 | 666.4620 | 
+|   256 |     32 |    1 |    288 |    1.408 |   181.76 | 663.1148 |    1.552 |    20.61 | 611.3757 |    2.961 |    97.27 | 635.9869 | 
+|   256 |     32 |    2 |    576 |    2.648 |   193.36 | 673.0214 |    1.823 |    35.12 | 626.3247 |    4.470 |   128.85 | 653.9837 | 
+|   256 |     32 |    4 |   1152 |    5.361 |   191.00 | 677.5049 |    2.181 |    58.70 | 621.3406 |    7.542 |   152.75 | 661.2655 | 
+|   256 |     32 |    8 |   2304 |   11.298 |   181.27 | 677.7904 |    3.231 |    79.22 | 636.7338 |   14.529 |   158.57 | 668.6589 | 
+|   256 |     32 |   16 |   4608 |   25.285 |   162.00 | 675.2020 |    5.882 |    87.05 | 652.7349 |   31.167 |   147.85 | 670.9619 | 
+|   256 |    128 |    1 |    384 |    1.410 |   181.53 | 662.5796 |    6.193 |    20.67 | 609.9927 |    7.603 |    50.51 | 619.7468 | 
+|   256 |    128 |    2 |    768 |    2.653 |   192.99 | 673.7583 |    7.310 |    35.02 | 624.5522 |    9.963 |    77.09 | 637.6552 | 
+|   256 |    128 |    4 |   1536 |    5.358 |   191.10 | 677.4694 |    9.019 |    56.77 | 616.6115 |   14.377 |   106.84 | 639.2931 | 
+|   256 |    128 |    8 |   3072 |   11.294 |   181.33 | 678.1297 |   13.983 |    73.23 | 630.6150 |   25.277 |   121.53 | 651.8450 | 
+|   256 |    128 |   16 |   6144 |   27.577 |   148.53 | 660.2522 |   25.753 |    79.52 | 648.2184 |   53.330 |   115.21 | 654.4410 | 
+|   512 |     16 |    1 |    528 |    2.693 |   190.15 | 670.0720 |    0.780 |    20.52 | 613.7696 |    3.472 |   152.06 | 657.4274 | 
+|   512 |     16 |    2 |   1056 |    5.365 |   190.87 | 677.4340 |    0.927 |    34.51 | 625.9695 |    6.292 |   167.82 | 669.8491 | 
+|   512 |     16 |    4 |   2112 |   11.297 |   181.29 | 677.6793 |    1.166 |    54.90 | 621.3029 |   12.462 |   169.47 | 672.4058 | 
+|   512 |     16 |    8 |   4224 |   25.294 |   161.94 | 674.9734 |    1.934 |    66.18 | 631.6683 |   27.228 |   155.14 | 671.8971 | 
+|   512 |     32 |    1 |    544 |    2.661 |   192.44 | 673.2775 |    1.576 |    20.31 | 610.1077 |    4.236 |   128.42 | 649.7830 | 
+|   512 |     32 |    2 |   1088 |    5.365 |   190.88 | 677.3728 |    1.890 |    33.86 | 620.6990 |    7.255 |   149.97 | 662.6064 | 
+|   512 |     32 |    4 |   2176 |   11.295 |   181.32 | 678.1044 |    2.357 |    54.30 | 619.7098 |   13.652 |   159.39 | 668.0215 | 
+|   512 |     32 |    8 |   4352 |   25.248 |   162.23 | 675.3278 |    3.888 |    65.85 | 630.7796 |   29.136 |   149.37 | 669.3833 | 
+|   512 |    128 |    1 |    640 |    2.660 |   192.45 | 672.6587 |    6.284 |    20.37 | 609.4259 |    8.945 |    71.55 | 628.2329 | 
+|   512 |    128 |    2 |   1280 |    5.365 |   190.88 | 677.3000 |    7.607 |    33.65 | 618.9800 |   12.972 |    98.68 | 643.0989 | 
+|   512 |    128 |    4 |   2560 |   12.408 |   165.06 | 661.5112 |    9.538 |    53.68 | 619.1069 |   21.946 |   116.65 | 643.0814 | 
+|   512 |    128 |    8 |   5120 |   26.375 |   155.30 | 666.5630 |   15.924 |    64.31 | 630.4885 |   42.299 |   121.04 | 652.9824 | 
+
+llama_perf_context_print:        load time =    2211.77 ms
+llama_perf_context_print: prompt eval time =  679763.25 ms / 89712 tokens (    7.58 ms per token,   131.98 tokens per second)
+llama_perf_context_print:        eval time =   25758.72 ms /   528 runs   (   48.79 ms per token,    20.50 tokens per second)
+llama_perf_context_print:       total time =  714681.67 ms / 90240 tokens
