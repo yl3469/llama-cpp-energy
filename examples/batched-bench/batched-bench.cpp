@@ -2,6 +2,8 @@
 #include "common.h"
 #include "log.h"
 #include "llama.h"
+#include <fstream>
+#include <string>
 
 #include <algorithm>
 #include <cstdio>
@@ -14,6 +16,32 @@ static void print_usage(int, char ** argv) {
     LOG("\nexample usage:\n");
     LOG("\n    %s -m model.gguf -c 2048 -b 2048 -ub 512 -npp 128,256,512 -ntg 128,256 -npl 1,2,4,8,16,32 [-pps]\n", argv[0]);
     LOG("\n");
+}
+
+static long get_memory_available (void) {
+    std::ifstream file("/proc/meminfo");
+    std::string key;
+    long value;
+    std::string unit;
+    
+    while (file >> key >> value >> unit) {
+        if (key == "MemAvailable:") {
+            LOG("Memory available: %ld %s\n", value, unit.c_str());
+
+            if (unit == "kB") {
+                return value / 1024;
+            } else if (unit == "mB") {
+                return value;
+            } else if (unit == "gB") {
+                return value * 1024;
+            } else {
+                return -1;
+            }
+            return value;  // The value is in MB
+        }
+    }
+
+    return -1;  // Error, couldn't find the value
 }
 
 int main(int argc, char ** argv) {
@@ -51,7 +79,16 @@ int main(int argc, char ** argv) {
     end_uj = em.fread(&em);
     printf("~~~~~Total energy for llama_load_model_from_file() in microjoules: %"PRIu64"\n", end_uj - start_uj);
 
-    
+    long int mem = get_memory_available();
+    printf("Memory available: %ld\n", mem);
+    long int max_mem_watermark = 120 * 1024; // 120 GB TODO - currently hardcoded
+
+    auto model_size = llama_model_size(model); // in bytes
+    // auto max_kv_memory = static_cast<long int>(mem * 0.8) - static_cast<long int>(model_size / 1024.0 / 1024); // in MB
+    auto max_kv_memory = static_cast<long int>(100*1024)- static_cast<long int>(model_size / 1024.0 / 1024); // in MB
+    printf("Model size: %ld\n", model_size / 1024 / 1024);
+    printf("Max memory watermark: %ld\n", max_mem_watermark);
+    printf("MAX KV memory: %ld\n", max_kv_memory);
 
     if (model == NULL) {
         fprintf(stderr , "%s: error: unable to load model\n" , __func__);
@@ -70,8 +107,15 @@ int main(int argc, char ** argv) {
         return 1;
     }
 
-    const int32_t n_kv_max = llama_n_ctx(ctx);
-
+    // const int32_t n_kv_max = llama_n_ctx(ctx);
+    // max is actually the max (npp+ntg) * npl
+    const int32_t max_npp = *std::max_element(n_pp.begin(), n_pp.end());
+    const int32_t max_ntg = *std::max_element(n_tg.begin(), n_tg.end());
+    const int32_t max_npl = *std::max_element(n_pl.begin(), n_pl.end());
+    const int32_t n_kv_max = (max_npp+max_ntg) * (n_pl.empty() ? 1 : max_npl);
+    auto kv_size = llama_get_kv_cache_size(ctx);
+    LOG("KV size: %f\n", kv_size);
+    LOG("n_kv_max size: %d\n", n_kv_max);
     llama_batch batch = llama_batch_init(n_kv_max, 0, 1);
 
     // decode in batches of ctx_params.n_batch tokens
@@ -131,9 +175,21 @@ int main(int argc, char ** argv) {
 
                 const int n_ctx_req = is_pp_shared ? pp + pl*tg : pl*(pp + tg);
 
-                if (n_ctx_req > n_kv_max) {
+                
+
+                // if (n_ctx_req > n_kv_max) {
+                //     continue;
+                // }
+
+                // calculate the max KV cache CPU memory can hold. This can be 4* nlayers * nheads * dheads for each token, and the rest of memory can be profiled by util function
+                // const
+                
+                if (kv_size * n_ctx_req > float(max_kv_memory)) {
+                    LOG("KV size exceeds the available memory %f \n", float(max_kv_memory));
                     continue;
                 }
+
+                
 
                 llama_batch_clear(batch);
 

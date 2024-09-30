@@ -2796,6 +2796,18 @@ struct llama_kv_cache {
         return size;
     }
 
+    size_t entry_size() const {
+        // check the begining of the bufs
+	// Untested
+        if (bufs.empty()) {
+            return 0;
+        }
+        else {
+            return ggml_backend_buffer_get_size(bufs[0]);   
+        }
+        // return ggml_backend_buffer_get_size(
+    }
+
     ~llama_kv_cache() {
         for (struct ggml_context * ctx : ctxs) {
             ggml_free(ctx);
@@ -3362,6 +3374,15 @@ struct llama_context {
     struct ggml_tensor * inp_pos_bucket;    // I32 [n_batch|n_kv, n_batch]
     struct ggml_tensor * inp_embd_enc;      // F32 [n_embd, n_outputs_enc]
     struct ggml_tensor * inp_KQ_mask_cross; // F32 [n_outputs_enc, n_batch]
+
+
+    // In llama.cpp
+    uint32_t llama_get_kv_cache_size() {
+        return kv_self.entry_size();
+    }
+
+
+
 };
 
 struct llama_lora_weight {
@@ -3792,6 +3813,7 @@ static bool llama_kv_cache_find_slot(
         // allow getting the range of used cells, from head to head + n
         cache.head = min;
         cache.n    = max - min + 1;
+        //printf("cache.head = %d, cache.n = %d, n_seq = %d\n", cache.head, cache.n, n_seqs);
 
         // sanity check
         return cache.n >= n_seqs;
@@ -3804,7 +3826,7 @@ static bool llama_kv_cache_find_slot(
     }
 
     uint32_t n_tested = 0;
-
+    // HERE
     while (true) {
         if (cache.head + n_tokens > cache.size) {
             n_tested += cache.size - cache.head;
@@ -3827,7 +3849,7 @@ static bool llama_kv_cache_find_slot(
         }
 
         if (n_tested >= cache.size) {
-            //LLAMA_LOG_ERROR("%s: failed to find a slot for %d tokens\n", __func__, n_tokens);
+            LLAMA_LOG_ERROR("%s: failed to find a slot for %d tokens\n", __func__, n_tokens);
             return false;
         }
     }
@@ -9808,6 +9830,7 @@ struct llm_build_context {
     const int64_t n_ctx;       // user-specified context size (can be different from n_ctx_train)
     const int64_t n_head;
     const int64_t n_head_kv;
+    
     const int64_t n_embd_head_k;
     const int64_t n_embd_k_gqa;
     const int64_t n_embd_head_v;
@@ -16678,6 +16701,7 @@ static int llama_decode_internal(
             }
         }
     }
+    
 
     GGML_ASSERT(n_tokens_all <= cparams.n_batch);
 
@@ -16702,6 +16726,7 @@ static int llama_decode_internal(
     const bool embd_pooled = cparams.embeddings && cparams.pooling_type != LLAMA_POOLING_TYPE_NONE;
 
     lctx.embd_seq.clear();
+    // printf("n_tokens_all = %d\n", n_tokens_all);
 
     // count outputs
     if (batch_all.logits && !embd_pooled) {
@@ -16787,7 +16812,6 @@ static int llama_decode_internal(
             }
         }
 
-        //printf("kv_self.n = %5d, kv_self.used = %5d, kv_self.head = %5d\n", kv_self.n, kv_self.used, kv_self.head);
 
         ggml_backend_sched_reset(lctx.sched);
         ggml_backend_sched_set_eval_callback(lctx.sched, lctx.cparams.cb_eval, lctx.cparams.cb_eval_user_data);
@@ -16835,9 +16859,10 @@ static int llama_decode_internal(
         }
 
         // plot the computation graph in dot format (for debugging purposes)
-        //if (n_past%100 == 0) {
+        // printf("KV used: %d \n", kv_self.used);
+        // if (kv_self.used%16 == 0) {
         //    ggml_graph_dump_dot(gf, NULL, "llama.dot");
-        //}
+        // }
 
         // extract logits
         if (res) {
@@ -19097,6 +19122,19 @@ void llama_free(struct llama_context * ctx) {
 uint32_t llama_n_ctx(const struct llama_context * ctx) {
     return ctx->cparams.n_ctx;
 }
+
+// In llama.cpp
+float llama_get_kv_cache_size(const struct llama_context* ctx) {
+    size_t memory_size_k = 0;
+    size_t memory_size_v = 0;
+    // memory_size_k += ggml_nbytes(ctx->kv_self.v_l[0]);
+    // memory_size_v += ggml_nbytes(ctx->kv_self.v_l[0]);
+    memory_size_k = 4*(ctx->model.hparams.n_layer * ctx->model.hparams.n_embd_head_k * 8);
+    memory_size_v = 4*(ctx->model.hparams.n_layer * ctx->model.hparams.n_embd_head_v * 8);
+    printf("n_head: %d, n_embd_head_k: %d, n_embd_head_v: %d, n_layer: %d, n_ctx_train: %d\n", ctx->model.hparams.n_head(), ctx->model.hparams.n_embd_head_k, ctx->model.hparams.n_embd_head_v, ctx->model.hparams.n_layer, ctx->model.hparams.n_ctx_train);
+    return result;
+}
+
 
 uint32_t llama_n_batch(const struct llama_context * ctx) {
     return ctx->cparams.n_batch;

@@ -1,4 +1,5 @@
 set(TARGET llama-batched-bench)
+
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(EnergyMonRapl REQUIRED IMPORTED_TARGET energymon-rapl)
 
