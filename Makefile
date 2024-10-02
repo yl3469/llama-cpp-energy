@@ -766,6 +766,14 @@ endif
 ifdef GGML_VULKAN_DEBUG
 	MK_CPPFLAGS  += -DGGML_VULKAN_DEBUG
 endif
+ifdef LLAMA_PERF
+	CFLAGS   += -DGGML_PERF
+	CXXFLAGS += -DGGML_PERF
+endif
+ifneq ($(filter aarch64%,$(UNAME_M)),)
+	CFLAGS   += -mcpu=native
+	CXXFLAGS += -mcpu=native
+endif
 
 ifdef GGML_VULKAN_MEMORY_DEBUG
 	MK_CPPFLAGS  += -DGGML_VULKAN_MEMORY_DEBUG

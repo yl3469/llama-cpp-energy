@@ -16797,6 +16797,9 @@ static int llama_decode_internal(
             if (kv_self.head > kv_self.used + 2*n_tokens) {
                 kv_self.head = 0;
             }
+            // if (n_tokens_all == 8){
+                printf("kv_self.head = %5d, kv_self.used = %5d, kv_self.size = %5d n_tokens = %d\n", kv_self.head, kv_self.used, kv_self.size, n_tokens);
+            // }
 
             if (!llama_kv_cache_find_slot(kv_self, ubatch)) {
                 return 1;
@@ -19129,8 +19132,10 @@ float llama_get_kv_cache_size(const struct llama_context* ctx) {
     size_t memory_size_v = 0;
     // memory_size_k += ggml_nbytes(ctx->kv_self.v_l[0]);
     // memory_size_v += ggml_nbytes(ctx->kv_self.v_l[0]);
-    memory_size_k = 4*(ctx->model.hparams.n_layer * ctx->model.hparams.n_embd_head_k * 8);
-    memory_size_v = 4*(ctx->model.hparams.n_layer * ctx->model.hparams.n_embd_head_v * 8);
+    memory_size_k = 4*(ctx->model.hparams.n_layer * ctx->model.hparams.n_embd_head_k *  ctx->model.hparams.n_head());
+    memory_size_v = 4*(ctx->model.hparams.n_layer * ctx->model.hparams.n_embd_head_v *  ctx->model.hparams.n_head());
+    auto result = ((float) (memory_size_k + memory_size_v))/1024.0/1024.0;
+    // float result = 
     printf("n_head: %d, n_embd_head_k: %d, n_embd_head_v: %d, n_layer: %d, n_ctx_train: %d\n", ctx->model.hparams.n_head(), ctx->model.hparams.n_embd_head_k, ctx->model.hparams.n_embd_head_v, ctx->model.hparams.n_layer, ctx->model.hparams.n_ctx_train);
     return result;
 }

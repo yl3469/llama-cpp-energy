@@ -113,7 +113,7 @@ int main(int argc, char ** argv) {
     const int32_t max_ntg = *std::max_element(n_tg.begin(), n_tg.end());
     const int32_t max_npl = *std::max_element(n_pl.begin(), n_pl.end());
     const int32_t n_kv_max = (max_npp+max_ntg) * (n_pl.empty() ? 1 : max_npl);
-    auto kv_size = llama_get_kv_cache_size(ctx);
+    float kv_size = llama_get_kv_cache_size(ctx);
     LOG("KV size: %f\n", kv_size);
     LOG("n_kv_max size: %d\n", n_kv_max);
     llama_batch batch = llama_batch_init(n_kv_max, 0, 1);
