@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.14) # for add_link_options and implicit target directories.
 project("llama.cpp" C CXX)
 include(CheckIncludeFileCXX)
-add_compile_options(-finstrument-functions)
+# add_compile_options(-finstrument-functions-exclude-file-list=src/llama-sampling.cpp,src/llama-vocab.cpp,src/unicode-data.cpp,src/llama-grammar.cpp,ggml,common)
 
 #set(CMAKE_WARN_DEPRECATED YES)
 set(CMAKE_WARN_UNUSED_CLI YES)
@@ -123,7 +123,6 @@ if (NOT TARGET ggml)
     # ... otherwise assume ggml is added by a parent CMakeLists.txt
 endif()
 add_subdirectory(src)
-add_subdirectory(lib)
 
 #
 # install
