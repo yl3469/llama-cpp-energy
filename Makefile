@@ -391,6 +391,8 @@ ifeq ($(LLAMA_FATAL_WARNINGS),1)
 	MK_CFLAGS   += -Werror
 	MK_CXXFLAGS += -Werror
 endif
+LDFLAGS += -L/home/yl3469/.local/lib -lenergymon-rapl
+CXXFLAGS += -I/home/yl3469/.local/include/energymon 
 
 # this version of Apple ld64 is buggy
 ifneq '' '$(findstring dyld-1015.7,$(shell $(CC) $(LDFLAGS) -Wl,-v 2>&1))'
@@ -616,7 +618,7 @@ ifdef GGML_CUDA
 		ifneq ('', '$(wildcard /opt/cuda)')
 			CUDA_PATH ?= /opt/cuda
 		else
-			CUDA_PATH ?= /usr/local/cuda
+			CUDA_PATH ?= /usr/local/cuda-12.1
 		endif
 
 		MK_CPPFLAGS  += -DGGML_USE_CUDA -DGGML_CUDA_USE_GRAPHS -I$(CUDA_PATH)/include -I$(CUDA_PATH)/targets/$(UNAME_M)-linux/include
@@ -647,6 +649,7 @@ ifdef GGML_CUDA_DEBUG
 endif # GGML_CUDA_DEBUG
 
 ifdef GGML_CUDA_NVCC
+	@echo "Defined GGML_CUDA_NVCC"
 	NVCC = $(CCACHE) $(GGML_CUDA_NVCC)
 else
 	ifdef GGML_MUSA
@@ -722,7 +725,7 @@ endif # GGML_CUDA_FA_ALL_QUANTS
 
 ifdef JETSON_EOL_MODULE_DETECT
 define NVCC_COMPILE
-	$(NVCC) -I. -Icommon -D_XOPEN_SOURCE=600 -D_GNU_SOURCE -DNDEBUG -DGGML_USE_CUDA -I/usr/local/cuda/include -I/opt/cuda/include -I/usr/local/cuda/targets/aarch64-linux/include -std=c++11 -O3 $(NVCCFLAGS) $(CPPFLAGS) -Xcompiler "$(CUDA_CXXFLAGS)" -c $< -o $@
+	$(NVCC) -I. -Icommon -D_XOPEN_SOURCE=600 -D_GNU_SOURCE -DNDEBUG -DGGML_USE_CUDA -L/home/yl3469/.local/lib -I/home/yl3469/.local/include -I/usr/local/cuda-12.1/include -I/opt/cuda/include -I/usr/local/cuda-12.1/targets/aarch64-linux/include -std=c++11 -O3 $(NVCCFLAGS) $(CPPFLAGS) -Xcompiler "$(CUDA_CXXFLAGS)" -c $< -o $@
 endef # NVCC_COMPILE
 else
 	ifdef GGML_MUSA

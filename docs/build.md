@@ -174,8 +174,8 @@ For Jetson user, if you have Jetson Orin, you can try this: [Offical Support](ht
 - Using `CMake`:
 
   ```bash
-  cmake -B build -DGGML_CUDA=ON
-  cmake --build build --config Release
+  cmake -B build_cuda -DGGML_CUDA=ON
+  cmake --build build_cuda --config Release
   ```
 
 The environment variable [`CUDA_VISIBLE_DEVICES`](https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars) can be used to specify which GPU(s) will be used.

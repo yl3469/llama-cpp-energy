@@ -1,7 +1,8 @@
 #!/bin/bash
 set -x
+mode=$1
 # Path to save the benchmark log
-LOGFILE="benchmark_log_fa-$(date +'%Y-%m-%d-%H-%M-%S').txt"
+LOGFILE="benchmark_log_fa_optimized_long_$1-$(date +'%Y-%m-%d-%H-%M-%S').txt"
 > $LOGFILE  # Clear the log file if it exists
 
 # Threshold for saturation (1.1 means 10% performance gain)
@@ -14,15 +15,22 @@ last_S_PP=0.1
 current_S_TG=0
 current_S_PP=0
 
-EXE=/home/lisa/llama.cpp/build_en_oct3/bin/llama-batched-bench
+#EXE=/home/yl3469/llama.cpp/build_gpu/bin/llama-batched-bench
+if [[ "$1" == "CPU" ]]; then
+	EXE=/home/yl3469/llama.cpp/build_en/bin/llama-batched-bench
+	NGL=0
+else
+	EXE=/home/yl3469/llama.cpp/build_gpu/bin/llama-batched-bench
+	NGL=999
+fi
 # Configurations to test (you can modify as needed)
 # batch_sizes=(16 32 64 128)  # Values for -ngl, the batch size
-pp_configs="8192"    # Values for -npp
-tg_configs="8"   # Values for -ntg
-pl_configs="2,4,8,16" #  batch size for the model
+pp_configs="32768,65536,131072"  # Values for -npp
+tg_configs="16"   # Values for -ntg
+pl_configs="1,2,4,8,16" #  batch size for the model
 # (Note, this can be calculated as KVMem / ) TODO
-num_threads=(16 32 64)         # Number of threads to test
-max_batchs=(1024 2048 512)  # Values for -b, the maximum batch size
+num_threads=(64)         # Number of threads to test
+max_batchs=(1024)  # Values for -b, the maximum batch size
 echo $pp_configs > /dev/null
 # Function to compare current and last performance
 saturation_check() {
@@ -100,7 +108,8 @@ check_time() {
 
 }
 # Loop through configurations Meta-Llama-3-70B-Instruct-Q4_K_M.gguf
-for models in Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf; do
+#for models in ; do
+for models in Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf gemma-2-27b-it-Q4_K_M.gguf; do
   for max_batch in "${max_batchs[@]}"; do
     for threads in "${num_threads[@]}"; do
 # for tg in "${tg_configs[@]}"; do
@@ -116,8 +125,8 @@ for models in Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf; do
 
     # Run the benchmark and append the output to the log file
       (
-        # taskset on the #threads CPUs
-        taskset -c 0-$(($threads-1)) $EXE -m ./models/$models -c 0 -b $max_batch -ub $max_batch -ngl 0 -npp $pp_configs -ntg $tg_configs -npl $pl_configs -t $threads -fa >> $LOGFILE
+        # taskset on the #threads CPUs taskset -c 0-$(($threads-1))
+        $EXE -m ./models/$models -c 0 -b $max_batch -ub $max_batch -ngl $NGL -npp $pp_configs -ntg $tg_configs -npl $pl_configs -t $threads -fa >> $LOGFILE
       ) &  # Redirect both stdout and stderr to the log file
       PID=$!
       
