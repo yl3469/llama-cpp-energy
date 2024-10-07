@@ -16798,7 +16798,7 @@ static int llama_decode_internal(
                 kv_self.head = 0;
             }
             // if (n_tokens_all == 8){
-                printf("kv_self.head = %5d, kv_self.used = %5d, kv_self.size = %5d n_tokens = %d\n", kv_self.head, kv_self.used, kv_self.size, n_tokens);
+                // printf("kv_self.head = %5d, kv_self.used = %5d, kv_self.size = %5d n_tokens = %d\n", kv_self.head, kv_self.used, kv_self.size, n_tokens);
             // }
 
             if (!llama_kv_cache_find_slot(kv_self, ubatch)) {

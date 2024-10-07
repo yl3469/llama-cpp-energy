@@ -49,6 +49,13 @@ int ggml_sve_cnt_b = 0;
 #include <llamafile/sgemm.h>
 #endif
 
+#define REDUCTION
+
+#ifdef REDUCTION
+#include <limits.h>
+#endif
+
+
 #if defined(_MSC_VER)
 // disable "possible loss of data" to avoid hundreds of casts
 // we should just be careful :)
@@ -15944,6 +15951,21 @@ static void ggml_compute_forward_argsort(
 
 // ggml_compute_forward_flash_attn_ext
 
+#define TESTTEST
+#define STRIPE        
+#define OUTER_NTH 8
+
+
+// static void init_shared() {
+//     for (int i = 0; i < OUTER_NTH; i++) {
+//         rowM[i] = -INFINITY;
+//         pthread_mutex_init(&rowMutexes[i], NULL);
+//         pthread_cond_init(&rowCV[i], NULL);
+//         counter[i] = 0;
+//     }
+// }
+
+
 static void ggml_compute_forward_flash_attn_ext_f16(
         const struct ggml_compute_params * params,
         const struct ggml_tensor * q,
@@ -15952,6 +15974,9 @@ static void ggml_compute_forward_flash_attn_ext_f16(
         const struct ggml_tensor * mask,
         struct ggml_tensor * dst) {
 
+    // q: [Batch, ]
+    // k: []
+    // v: []
     GGML_TENSOR_LOCALS(int64_t, neq, q,   ne)
     GGML_TENSOR_LOCALS(size_t,  nbq, q,   nb)
     GGML_TENSOR_LOCALS(int64_t, nek, k,   ne)
@@ -15979,7 +16004,7 @@ static void ggml_compute_forward_flash_attn_ext_f16(
     GGML_ASSERT(nek0 == D);
     GGML_ASSERT(nev0 == D);
 
-    GGML_ASSERT(neq1 == N);
+    GGML_ASSERT(neq1 == N); // total batch
     GGML_ASSERT(nev0 == D);
 
     // dst cannot be transposed or permuted
@@ -15996,16 +16021,70 @@ static void ggml_compute_forward_flash_attn_ext_f16(
     const int64_t rv3 = neq3/nev3;
 
     // parallelize by q rows using ggml_vec_dot_f32
-
+    // fprintf(stdout, "neq0 %ld, neq1 %ld, neq2 %ld, neq3 %ld, nek2 %ld\n", neq0, neq1, neq2, neq3, nek2);
     // total rows in q
     const int nr = neq1*neq2*neq3;
 
+#ifdef TESTTEST
+    // row: kv sequence
+    // batch 1024, 8 sets of threads
+    // [tid 0-7:  batch 0-127, kv sequence]
+    // [tid 8-15: batch 128-255, kv sequence]
+    // [tid 16-23: batch 256-383, kv sequence]
+    // kv sequence: 256
+    // tid 0: 0-31, tid 7: -255
+
+
+    // Assume 64 threads, 8x8 grid, first 8 is for batch x nhead, second 8 is for kv seq
+    int outer_nth = OUTER_NTH;
+    int inner_nth = nth / outer_nth;
+    GGML_ASSERT(inner_nth * outer_nth == nth);
+    const int dr = (nr + outer_nth - 1)/outer_nth;
+    int outer_ith = ith / inner_nth;
+
+#ifdef REDUCTION
+    static float rowM[OUTER_NTH];
+    static pthread_mutex_t rowMutexes[OUTER_NTH];
+    static pthread_cond_t rowCV[OUTER_NTH];
+    static int counter[OUTER_NTH];
+    static int initialized = 0;
+    static pthread_mutex_t initMutex = PTHREAD_MUTEX_INITIALIZER;
+    static pthread_cond_t initCond = PTHREAD_COND_INITIALIZER;
+    
+    pthread_mutex_lock(&initMutex);
+    if (initialized == 0) {
+        for (int i = 0 ;i<outer_nth;++i) {
+            pthread_mutex_init(&rowMutexes[i], NULL);
+            pthread_cond_init(&rowCV[i], NULL);
+            rowM[i] = -INFINITY;
+            counter[i] = 0;
+        }
+        initialized = 1;
+        pthread_cond_broadcast(&initCond);
+    }
+    else {
+        while (initialized == 0) {
+            pthread_cond_wait(&initCond, &initMutex);
+        }
+    }
+    pthread_mutex_unlock(&initMutex);
+
+#endif
+
+#else
     // rows per thread
     const int dr = (nr + nth - 1)/nth;
+#endif
 
     // row range for this thread
+    
+#ifdef TESTTEST
+    const int ir0 = dr*outer_ith;
+    const int ir1 = MIN(ir0 + dr, nr);
+#else
     const int ir0 = dr*ith;
     const int ir1 = MIN(ir0 + dr, nr);
+#endif
 
     float scale         = 1.0f;
     float max_bias      = 0.0f;
@@ -16033,9 +16112,9 @@ static void ggml_compute_forward_flash_attn_ext_f16(
     // loop over n_batch and n_head
     for (int ir = ir0; ir < ir1; ++ir) {
         // q indices
-        const int iq3 = ir/(neq2*neq1);
-        const int iq2 = (ir - iq3*neq2*neq1)/neq1;
-        const int iq1 = (ir - iq3*neq2*neq1 - iq2*neq1);
+        const int iq3 = ir/(neq2*neq1); // batch index
+        const int iq2 = (ir - iq3*neq2*neq1)/neq1; //  head index
+        const int iq1 = (ir - iq3*neq2*neq1 - iq2*neq1); // q token index
 
         const uint32_t h = iq2; // head index
         const float slope = (max_bias > 0.0f) ? h < n_head_log2 ? powf(m0, h + 1) : powf(m1, 2*(h - n_head_log2) + 1) : 1.0f;
@@ -16058,11 +16137,11 @@ static void ggml_compute_forward_flash_attn_ext_f16(
 
         // k indices
         const int ik3 = iq3 / rk3;
-        const int ik2 = iq2 / rk2;
+        const int ik2 = iq2 / rk2; // k head idx
 
         // v indices
         const int iv3 = iq3 / rv3;
-        const int iv2 = iq2 / rv2;
+        const int iv2 = iq2 / rv2; // v head idx
 
         const float * pq = (const float *) ((char *) q->data + (iq1*nbq1 + iq2*nbq2 + iq3*nbq3));
         q_to_vec_dot(pq, Q_q, D);
@@ -16070,7 +16149,153 @@ static void ggml_compute_forward_flash_attn_ext_f16(
         // online softmax / attention
         // loop over n_kv and n_head_kv
         // ref: https://arxiv.org/pdf/2112.05682.pdf
-        for (int64_t ic = 0; ic < nek1; ++ic) {
+
+#ifdef TESTTEST
+        // per thread ntoken
+        // int per_thread_ntoken = nek1 / inner_nth;
+        // int kv_token_thread_offset = (ith % inner_nth) * per_thread_ntoken;
+#ifdef STRIPE
+        // int per_thread_ntoken = nek1 / inner_nth;
+        int kv_token_thread_offset = ith % inner_nth; // 0,1,2,3,4,5,6,7
+        for (int64_t ic = kv_token_thread_offset; ic < nek1; ic+=inner_nth) { // nek1: k token idx
+#else
+        int per_thread_ntoken = nek1 / inner_nth;
+        int kv_token_thread_offset = (ith % inner_nth) * per_thread_ntoken;
+        for (int64_t ic = kv_token_thread_offset; ic < kv_token_thread_offset + per_thread_ntoken; ++ic) { // nek1: k token idx
+#endif
+            // fprintf(stdout, "thread [%d, %d] is working on q head %d, q token %d, kv token %ld\n", outer_ith, ith % inner_nth, iq2, iq1, ic);
+            const float mv = mp ? slope*GGML_FP16_TO_FP32(mp[ic]) : 0.0f;
+            // if (mv == -INFINITY) { //TODO: take care of the mask load imbalance
+            //     continue;
+            // }
+
+            float s; // KQ value
+
+            const char * k_data = (const char *) k->data + ( ic*nbk1 + ik2*nbk2 + ik3*nbk3);
+            kq_vec_dot(D, &s, 0, k_data, 0, Q_q, 0, 1);
+// #ifdef ASYNC
+//             s -= -5.31f; // average vvalue of the range of parameters https://arxiv.org/pdf/2311.01282
+// #endif //asyc
+            s = s*scale; // scale KQ value
+
+            if (logit_softcap != 0.0f) {
+                s = logit_softcap*tanhf(s);
+            }
+
+            s += mv; // apply mask
+
+            const float Mold = M;
+
+            float ms = 1.0f; // upon new higher max val, scale VKQ and KQ sum with this value
+            float vs = 1.0f; // post-softmax KQ value, expf(s - M)
+
+            const char * v_data = ((const char *) v->data + (ic*nbv1 + iv2*nbv2 + iv3*nbv3));
+
+#ifdef ASYNC
+            if (v->type == GGML_TYPE_F16) {
+                // // if (s > M) {
+                //     // s is new maximum, ms < 1.0f, vs == expf(s - s) == 1.0f
+                //     M = s;
+                //     ms = expf(Mold - M);
+
+                //     // V = V*expf(Mold - M)
+                //     ggml_vec_scale_f16(D, VKQ16, ms);
+                // // } else {
+                //     // no new maximum, ms == 1.0f, vs != 1.0f
+                //     vs = expf(s - M);
+                // }
+
+                vs = expf(s);
+                ggml_vec_mad_f16(D, VKQ16, (const ggml_fp16_t *) v_data, vs);
+            } else {
+                // if (s > M) {
+                //     // s is new maximum, ms < 1.0f, vs == expf(s - s) == 1.0f
+                //     M = s;
+                //     ms = expf(Mold - M);
+
+                //     // V = V*expf(Mold - M)
+                //     ggml_vec_scale_f32(D, VKQ32, ms);
+                // } else {
+                //     // no new maximum, ms == 1.0f, vs != 1.0f
+                //     vs = expf(s - M);
+                // }
+
+                v_to_float(v_data, V32, D);
+
+                // check if expf(s) overflows
+                // if isinf(exp(s)) {
+                //     // recompute 
+                //     s = s/scale; // scale KQ value
+
+
+                // }
+                vs = expf(s);
+                ggml_vec_mad_f32(D, VKQ32, V32, vs);
+            }
+
+#else // sync 
+#ifdef REDUCTION
+            pthread_mutex_lock(&rowMutexes[outer_ith]);
+            if (s > rowM[outer_ith]) {
+                rowM[outer_ith] = s;
+            }
+            counter[outer_ith]++;
+            fprintf(stdout, "outer ith %d, inner ith %d, counter[%d]=%d\n", outer_ith, ith % inner_nth, outer_ith, counter[outer_ith]);
+            if (counter[outer_ith] == inner_nth) {
+                // reduce 
+                if (rowM[outer_ith] > M) {
+                    M = rowM[outer_ith];
+                }
+                // rowM[outer_ith] = -INFINITY;
+                counter[outer_ith] = 0;
+                pthread_cond_broadcast(&rowCV[outer_ith]);
+            } else {
+                pthread_cond_wait(&rowCV[outer_ith], &rowMutexes[outer_ith]);
+                fprintf(stdout, "thread [%d, %d] is working on q head %d, q token %d, kv token %ld\n", outer_ith, ith % inner_nth, iq2, iq1, ic);
+            }
+            pthread_mutex_unlock(&rowMutexes[outer_ith]);
+#endif
+            if (v->type == GGML_TYPE_F16) {
+                if (s > M) {
+                    // s is new maximum, ms < 1.0f, vs == expf(s - s) == 1.0f
+                    M = s;
+                    ms = expf(Mold - M);
+
+                    // V = V*expf(Mold - M)
+                    ggml_vec_scale_f16(D, VKQ16, ms);
+                } else {
+                    // no new maximum, ms == 1.0f, vs != 1.0f
+                    vs = expf(s - M);
+                }
+
+                // V += v*expf(s - M)
+                ggml_vec_mad_f16(D, VKQ16, (const ggml_fp16_t *) v_data, vs);
+            } else {
+                if (s > M) {
+                    // s is new maximum, ms < 1.0f, vs == expf(s - s) == 1.0f
+                    M = s;
+                    ms = expf(Mold - M);
+
+                    // V = V*expf(Mold - M)
+                    ggml_vec_scale_f32(D, VKQ32, ms);
+                } else {
+                    // no new maximum, ms == 1.0f, vs != 1.0f
+                    vs = expf(s - M);
+                }
+
+                v_to_float(v_data, V32, D);
+
+                // V += v*expf(s - M)
+                ggml_vec_mad_f32(D, VKQ32, V32, vs);
+            }
+
+            S = S*ms + vs; // scale and increment sum with partial sum
+        }
+        // Reduction across thread groups
+        // After you do the reduce, the M is becoming 
+#endif // async
+#else
+        for (int64_t ic = 0; ic < nek1; ++ic) { // nek1: k token idx
             const float mv = mp ? slope*GGML_FP16_TO_FP32(mp[ic]) : 0.0f;
             if (mv == -INFINITY) {
                 continue;
@@ -16132,7 +16357,7 @@ static void ggml_compute_forward_flash_attn_ext_f16(
 
             S = S*ms + vs; // scale and increment sum with partial sum
         }
-
+#endif
         if (v->type == GGML_TYPE_F16) {
             for (int64_t d = 0; d < D; ++d) {
                 VKQ32[d] = GGML_FP16_TO_FP32(VKQ16[d]);
