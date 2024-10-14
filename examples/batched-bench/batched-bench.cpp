@@ -123,7 +123,7 @@ int main(int argc, char ** argv) {
     llama_batch batch = llama_batch_init(n_kv_max, 0, 1);
 
     // decode in batches of ctx_params.n_batch tokens
-    auto decode_helper = [](llama_context * ctx, llama_batch & batch, int32_t n_batch) {
+    auto decode_helper = [](llama_context * ctx, llama_batch & batch, int32_t n_batch, bool is_storing = false) {
         for (int32_t i = 0; i < (int32_t) batch.n_tokens; i += n_batch) {
             const int32_t n_tokens = std::min(n_batch, (int32_t) (batch.n_tokens - i));
 
@@ -137,15 +137,10 @@ int main(int argc, char ** argv) {
                 batch.logits   + i,
                 0, 0, 0, // unused
             };
-
-            const int ret = llama_decode(ctx, batch_view);
-            if (ret != 0) {
-                LOG_ERR("failed to decode the batch, n_batch = %d, ret = %d\n", n_batch, ret);
-                return false;
-            }
-            
             // save state (rng, logits, embedding and kv_cache) to file
-            {
+            if (is_storing == true) { 
+                // At the end of the prompting phase or beginning of the decoding phase, 
+                // save state or load state to speed up the computation.
                 std::vector<uint8_t> state_mem(llama_state_get_size(ctx));
                 const size_t written = llama_state_get_data(ctx, state_mem.data(), state_mem.size());
         
@@ -158,7 +153,7 @@ int main(int argc, char ** argv) {
                 // struct stat buffer;
                 // if (stat(filename.c_str(), &buffer) == 0)
                 //     std::cout << "File '" << filename << "' already exists." << std::endl;
-                if (access(filename, F_OK) == 0) {
+                if (access(filename, F_OK) == 0) { // Loading
                     // load the state from the file
                     FILE *fp_read = fopen(filename, "rb");
                     fseek(fp_read, 0, SEEK_END);
@@ -185,20 +180,33 @@ int main(int argc, char ** argv) {
                     // llama_state_set_data(ctx, state_mem.data(), state_mem.size());
                     // fprintf(stderr, "%s : loaded state from %s\n", __func__, filename);
                     
+                } 
+                else { // Writing
+                    const int ret = llama_decode(ctx, batch_view);
+                    if (ret != 0) {
+                        LOG_ERR("failed to decode the batch, n_batch = %d, ret = %d\n", n_batch, ret);
+                        return false;
+                    }
+                    llama_synchronize(ctx);
+                    FILE *fp_write = fopen(filename, "wb");
+                    if (fp_write == NULL) {
+                        fprintf(stderr, "Error opening file: %s\n", filename);
+                        exit(1);
+                    }
+                    fwrite(state_mem.data(), 1, written, fp_write);
+                    fclose(fp_write);
+            
+                    fprintf(stderr, "%s : serialized state into %zd out of a maximum of %zd bytes\n", __func__, written, state_mem.size());
                 }
-                FILE *fp_write = fopen(filename, "wb");
-                if (fp_write == NULL) {
-                    fprintf(stderr, "Error opening file: %s\n", filename);
-                    exit(1);
-                }
-                fwrite(state_mem.data(), 1, written, fp_write);
-                fclose(fp_write);
-        
-                fprintf(stderr, "%s : serialized state into %zd out of a maximum of %zd bytes\n", __func__, written, state_mem.size());
             }
-
-
-            llama_synchronize(ctx);
+            else { // no saved context or nothing to save. Just decode. 
+                const int ret = llama_decode(ctx, batch_view);
+                if (ret != 0) {
+                    LOG_ERR("failed to decode the batch, n_batch = %d, ret = %d\n", n_batch, ret);
+                    return false;
+                }
+                llama_synchronize(ctx);
+            }
         }
 
         return true;
@@ -210,7 +218,7 @@ int main(int argc, char ** argv) {
             llama_batch_add(batch, 0, i, { 0 }, false);
         }
 
-        if (!decode_helper(ctx, batch, ctx_params.n_batch)) {
+        if (!decode_helper(ctx, batch, ctx_params.n_batch, true)) {
             LOG_ERR("%s: llama_decode() failed\n", __func__);
             return 1;
         }
@@ -246,9 +254,6 @@ int main(int argc, char ** argv) {
                     LOG("KV size exceeds the available memory %f \n", float(max_kv_memory));
                     continue;
                 }
-
-                
-
                 llama_batch_clear(batch);
 
                 for (int i = 0; i < pp; ++i) {
@@ -263,10 +268,11 @@ int main(int argc, char ** argv) {
 
                 llama_kv_cache_clear(ctx);
 
-                if (!decode_helper(ctx, batch, ctx_params.n_batch)) {
+                if (!decode_helper(ctx, batch, ctx_params.n_batch, false)) {
                     LOG_ERR("%s: llama_decode() failed\n", __func__);
                     return 1;
                 }
+                printf("Finished loading or computing prompt %d\n", i_pl);
 
                 if (is_pp_shared) {
                     for (int32_t i = 1; i < pl; ++i) {
@@ -287,10 +293,12 @@ int main(int argc, char ** argv) {
                         llama_batch_add(batch, 0, pp + i, { j }, true);
                     }
 
-                    if (!decode_helper(ctx, batch, ctx_params.n_batch)) {
+                    if (!decode_helper(ctx, batch, ctx_params.n_batch, i==0)) {
+                        
                         LOG_ERR("%s: llama_decode() failed\n", __func__);
                         return 1;
                     }
+                    printf("Generated %d composition %d's decoding tokens\n", i_pl, i);
                 }
 
                 const auto t_tg_end = ggml_time_us();
@@ -327,7 +335,7 @@ int main(int argc, char ** argv) {
             }
         }
     }
-// destroy the instance
+    // destroy the instance
     em.ffinish(&em);
     LOG("\n");
     llama_perf_context_print(ctx);
