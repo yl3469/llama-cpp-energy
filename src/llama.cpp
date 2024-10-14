@@ -16863,7 +16863,7 @@ static int llama_decode_internal(
 
         // plot the computation graph in dot format (for debugging purposes)
         // printf("KV used: %d \n", kv_self.used);
-        // if (kv_self.used%16 == 0) {
+        // if (kv_self.used%1024 == 0) {
         //    ggml_graph_dump_dot(gf, NULL, "llama.dot");
         // }
 
@@ -19131,11 +19131,13 @@ float llama_get_kv_cache_size(const struct llama_context* ctx) {
     size_t memory_size_k = 0;
     size_t memory_size_v = 0;
     // memory_size_k += ggml_nbytes(ctx->kv_self.v_l[0]);
+    // printf(ggml_nbytes(ctx->kv_self.v_l[0]));
     // memory_size_v += ggml_nbytes(ctx->kv_self.v_l[0]);
-    memory_size_k = 4*(ctx->model.hparams.n_layer * ctx->model.hparams.n_embd_head_k *  ctx->model.hparams.n_head());
-    memory_size_v = 4*(ctx->model.hparams.n_layer * ctx->model.hparams.n_embd_head_v *  ctx->model.hparams.n_head());
-    auto result = ((float) (memory_size_k + memory_size_v))/1024.0/1024.0;
-    // float result = 
+    // TODO, make it more adaptable to other quanitzed KV....
+    memory_size_k = ( (ctx->model.hparams.n_layer-1) * ctx->model.hparams.n_embd_head_k *  ctx->model.hparams.n_head());
+    memory_size_v = ( (ctx->model.hparams.n_layer-1) * ctx->model.hparams.n_embd_head_v *  ctx->model.hparams.n_head());
+    auto result = 2 * ((float) (memory_size_k + memory_size_v))/1024.0/1024.0;
+    printf("kv cache size %f\n", result);
     printf("n_head: %d, n_embd_head_k: %d, n_embd_head_v: %d, n_layer: %d, n_ctx_train: %d\n", ctx->model.hparams.n_head(), ctx->model.hparams.n_embd_head_k, ctx->model.hparams.n_embd_head_v, ctx->model.hparams.n_layer, ctx->model.hparams.n_ctx_train);
     return result;
 }
@@ -20445,6 +20447,7 @@ bool llama_state_load_file(struct llama_context * ctx, const char * path_session
 
 static bool llama_state_save_file_internal(struct llama_context * ctx, const char * path_session, const llama_token * tokens, size_t n_token_count) {
     llama_file file(path_session, "wb");
+    //LISA
 
     file.write_u32(LLAMA_SESSION_MAGIC);
     file.write_u32(LLAMA_SESSION_VERSION);
@@ -20690,7 +20693,7 @@ int32_t llama_encode(
         LLAMA_LOG_ERROR("%s: failed to encode, ret = %d\n", __func__, ret);
     }
 
-    return ret;
+    return 0;
 }
 
 int32_t llama_decode(
