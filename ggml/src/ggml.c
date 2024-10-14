@@ -15951,8 +15951,8 @@ static void ggml_compute_forward_argsort(
 
 // ggml_compute_forward_flash_attn_ext
 
-#define TESTTEST
-#define STRIPE        
+// #define TESTTEST
+// #define STRIPE        
 #define OUTER_NTH 8
 
 

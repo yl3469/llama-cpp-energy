@@ -9,6 +9,10 @@
 #include <cstdio>
 #include <string>
 #include <vector>
+#include <cstring>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include "energymon-rapl.h"
 
 
@@ -139,6 +143,60 @@ int main(int argc, char ** argv) {
                 LOG_ERR("failed to decode the batch, n_batch = %d, ret = %d\n", n_batch, ret);
                 return false;
             }
+            
+            // save state (rng, logits, embedding and kv_cache) to file
+            {
+                std::vector<uint8_t> state_mem(llama_state_get_size(ctx));
+                const size_t written = llama_state_get_data(ctx, state_mem.data(), state_mem.size());
+        
+                // make the file name with a string that shows the size
+                char filename[100];  // Buffer to hold the formatted filename
+                sprintf(filename, "dump_state_len%lu.bin", state_mem.size());
+                // if the filename already existed, load the state instead!
+                
+                //    // Check if the file already exists
+                // struct stat buffer;
+                // if (stat(filename.c_str(), &buffer) == 0)
+                //     std::cout << "File '" << filename << "' already exists." << std::endl;
+                if (access(filename, F_OK) == 0) {
+                    // load the state from the file
+                    FILE *fp_read = fopen(filename, "rb");
+                    fseek(fp_read, 0, SEEK_END);
+                    state_mem.resize(ftell(fp_read));
+                    fseek(fp_read, 0, SEEK_SET);
+                    const size_t read = fread(state_mem.data(), 1, state_mem.size(), fp_read);
+                    fclose(fp_read);
+            
+                    if (read != llama_state_set_data(ctx, state_mem.data(), state_mem.size())) {
+                        fprintf(stderr, "\n%s : failed to read state\n", __func__);
+                        // llama_free(ctx);
+                        // llama_free_model(model);
+                        return false;
+                    }
+            
+                    fprintf(stderr, "%s : deserialized state from %zd out of a maximum of %zd bytes\n", __func__, read, state_mem.size());
+                    
+                    // if (fp_read == NULL) {
+                    //     fprintf(stderr, "Error opening file: %s\n", filename);
+                    //     exit(1);
+                    // }
+                    // fread(state_mem.data(), 1, state_mem.size(), fp_read);
+                    // fclose(fp_read);
+                    // llama_state_set_data(ctx, state_mem.data(), state_mem.size());
+                    // fprintf(stderr, "%s : loaded state from %s\n", __func__, filename);
+                    
+                }
+                FILE *fp_write = fopen(filename, "wb");
+                if (fp_write == NULL) {
+                    fprintf(stderr, "Error opening file: %s\n", filename);
+                    exit(1);
+                }
+                fwrite(state_mem.data(), 1, written, fp_write);
+                fclose(fp_write);
+        
+                fprintf(stderr, "%s : serialized state into %zd out of a maximum of %zd bytes\n", __func__, written, state_mem.size());
+            }
+
 
             llama_synchronize(ctx);
         }
